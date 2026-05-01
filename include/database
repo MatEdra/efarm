@@ -1,0 +1,152 @@
+    -- Create Database
+    CREATE DATABASE IF NOT EXISTS smart_farming_ph;
+    USE smart_farming_ph;
+
+    -- Admins Table (No registration - manually added)
+    CREATE TABLE IF NOT EXISTS admins (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        phone_number VARCHAR(20) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role ENUM('super_admin', 'content_manager') DEFAULT 'content_manager',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    -- Farmers Table
+    CREATE TABLE IF NOT EXISTS farmers (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        phone_number VARCHAR(20) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        farm_name VARCHAR(100),
+        farm_location VARCHAR(100),
+        farm_size DECIMAL(10,2),
+        experience_years INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    -- Farmer Crops Table
+    CREATE TABLE IF NOT EXISTS farmer_crops (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        farmer_id INT,
+        crop_type VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (farmer_id) REFERENCES farmers(id) ON DELETE CASCADE
+    );
+
+    -- Learning Materials Table
+    CREATE TABLE IF NOT EXISTS learning_materials (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        file_type ENUM('pdf', 'video', 'article') NOT NULL,
+        file_path VARCHAR(500),
+        file_size VARCHAR(50),
+        duration VARCHAR(20),
+        download_count INT DEFAULT 0,
+        uploaded_by INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (uploaded_by) REFERENCES admins(id) ON DELETE SET NULL
+    );
+
+    -- Material Categories Table
+    CREATE TABLE IF NOT EXISTS material_categories (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        material_id INT,
+        category_name VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (material_id) REFERENCES learning_materials(id) ON DELETE CASCADE
+    );
+
+    -- Seasons Table
+    CREATE TABLE IF NOT EXISTS seasons (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(50) NOT NULL,
+        description TEXT,
+        start_month INT,
+        end_month INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Crops Table
+    CREATE TABLE IF NOT EXISTS crops (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        season_id INT,
+        planting_guide TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (season_id) REFERENCES seasons(id) ON DELETE SET NULL
+    );
+
+    -- Weather Data Table
+    CREATE TABLE IF NOT EXISTS weather_data (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        location VARCHAR(100) NOT NULL,
+        date DATE NOT NULL,
+        temperature_max DECIMAL(5,2),
+        temperature_min DECIMAL(5,2),
+        `condition` VARCHAR(50),
+        precipitation DECIMAL(5,2),
+        humidity INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    ALTER TABLE crops 
+    ADD COLUMN water_requirements ENUM('low', 'medium', 'high') NULL AFTER planting_guide,
+    ADD COLUMN sunlight_requirements ENUM('full_sun', 'partial_sun', 'shade') NULL AFTER water_requirements;
+    ALTER TABLE farmers ADD COLUMN last_login TIMESTAMP NULL AFTER experience_years;
+
+    -- Insert Default Data
+    INSERT INTO seasons (name, description, start_month, end_month) VALUES
+    ('Dry Season', 'November to April - Ideal for crops that require less water', 11, 4),
+    ('Wet Season', 'May to October - Best for rice and other water-intensive crops', 5, 10),
+    ('Hybrid Season', 'Transition periods between dry and wet seasons', 3, 5);
+
+    INSERT INTO crops (name, description, season_id, planting_guide) VALUES
+    ('Tomatoes', 'High yield, drought-resistant varieties', 1, 'Plant in well-drained soil with plenty of sunlight. Water regularly but avoid overwatering.'),
+    ('Bell Peppers', 'Requires well-drained soil', 1, 'Needs full sun and warm temperatures. Harvest when fruits are firm and fully colored.'),
+    ('Eggplant', 'Tolerant to heat and dry conditions', 1, 'Plant in rich, well-drained soil. Requires consistent moisture.'),
+    ('Rice', 'Staple crop, requires abundant water', 2, 'Needs flooded fields or consistent moisture. Best planted at start of rainy season.'),
+    ('Corn', 'Adapts well to rainy conditions', 2, 'Plant in rows with good spacing. Requires nitrogen-rich soil.'),
+    ('Watermelon', 'Thrives in warm, wet conditions', 2, 'Needs plenty of space to spread. Harvest when tendrils near fruit turn brown.'),
+    ('Sweet Potatoes', 'Root crop, versatile and nutritious', 3, 'Plant in loose, well-drained soil. Drought tolerant once established.'),
+    ('Kangkong', 'Leafy vegetable, grows quickly', 3, 'Can grow in water or moist soil. Harvest young leaves for best flavor.');
+
+    -- Insert default admin accounts (login with phone number)
+    INSERT INTO admins (first_name, last_name, email, phone_number, password, role) VALUES 
+    ('Super', 'Admin', 'superadmin@smartfarming.ph', '09171234567', 'admin123', 'super_admin'),
+    ('Content', 'Manager', 'content@smartfarming.ph', '09179876543', 'admin123', 'content_manager'),
+    ('Regional', 'Coordinator', 'regional@smartfarming.ph', '09171122334', 'admin123', 'content_manager');
+
+    -- Insert some sample farmers
+    INSERT INTO farmers (first_name, last_name, email, phone_number, password, farm_name, farm_location, farm_size, experience_years) VALUES 
+    ('Juan', 'Dela Cruz', 'juan@farmer.ph', '09170000001', 'farmer123', 'Dela Cruz Family Farm', 'Central Luzon', 5.5, 10),
+    ('Maria', 'Santos', 'maria@farmer.ph', '09170000002', 'farmer123', 'Santos Organic Farm', 'CALABARZON', 3.2, 7),
+    ('Pedro', 'Gonzales', 'pedro@farmer.ph', '09170000003', 'farmer123', 'Gonzales Rice Fields', 'Bicol Region', 12.0, 15);
+
+    -- Insert farmer crops
+    INSERT INTO farmer_crops (farmer_id, crop_type) VALUES 
+    (1, 'rice'), (1, 'vegetables'),
+    (2, 'fruits'), (2, 'vegetables'),
+    (3, 'rice'), (3, 'corn');
+
+    -- Insert some sample learning materials
+    INSERT INTO learning_materials (title, description, file_type, file_size, uploaded_by) VALUES
+    ('Organic Farming Guide', 'Complete guide to transitioning to organic farming practices', 'pdf', '2.4 MB', 1),
+    ('Pest Management Webinar', 'Effective and eco-friendly pest control methods', 'video', '45 min', 2),
+    ('Soil Health Assessment', 'How to test and improve your soil quality', 'pdf', '1.7 MB', 1);
+
+    -- Now insert categories (this will work because materials exist and table exists)
+    INSERT INTO material_categories (material_id, category_name) VALUES 
+    (1, 'crop_management'),
+    (1, 'soil_health'),
+    (2, 'pest_control'),
+    (3, 'soil_health');
