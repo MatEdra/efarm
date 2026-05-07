@@ -607,30 +607,21 @@
                                     <h3 class="form-section-title"><i class="fas fa-map-marker-alt me-2"></i>Location & Size</h3>
                                     <div class="row g-4">
                                         <div class="col-md-6">
-                                            <label for="farmLocation" class="form-label fw-semibold fs-6">Farm Region</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="fas fa-map-pin"></i></span>
-                                                <select class="form-control" id="farmLocation" required>
-                                                    <option value="">Select your region</option>
-                                                    <option value="NCR">National Capital Region</option>
-                                                    <option value="CAR">Cordillera Administrative Region</option>
-                                                    <option value="Ilocos Region">Ilocos Region</option>
-                                                    <option value="Cagayan Valley">Cagayan Valley</option>
-                                                    <option value="Central Luzon">Central Luzon</option>
-                                                    <option value="CALABARZON">CALABARZON</option>
-                                                    <option value="MIMAROPA">MIMAROPA</option>
-                                                    <option value="Bicol Region">Bicol Region</option>
-                                                    <option value="Western Visayas">Western Visayas</option>
-                                                    <option value="Central Visayas">Central Visayas</option>
-                                                    <option value="Eastern Visayas">Eastern Visayas</option>
-                                                    <option value="Zamboanga Peninsula">Zamboanga Peninsula</option>
-                                                    <option value="Northern Mindanao">Northern Mindanao</option>
-                                                    <option value="Davao Region">Davao Region</option>
-                                                    <option value="SOCCSKSARGEN">SOCCSKSARGEN</option>
-                                                    <option value="Caraga">Caraga</option>
-                                                    <option value="BARMM">BARMM</option>
-                                                </select>
-                                            </div>
+                                            <label class="form-label fw-semibold fs-6">Farm Location</label>
+                                            <input type="hidden" id="farmLocation">
+                                            <select class="form-select form-select-sm mb-1" id="regRegion">
+                                                <option value="">— Select Region —</option>
+                                            </select>
+                                            <select class="form-select form-select-sm mb-1" id="regProvince" disabled>
+                                                <option value="">— Select Province —</option>
+                                            </select>
+                                            <select class="form-select form-select-sm mb-1" id="regMunicipality" disabled>
+                                                <option value="">— Select Municipality / City —</option>
+                                            </select>
+                                            <select class="form-select form-select-sm mb-1" id="regBarangay" disabled>
+                                                <option value="">— Select Barangay —</option>
+                                            </select>
+                                            <div class="form-text text-success fw-semibold" id="regLocationDisplay"></div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="farmSize" class="form-label fw-semibold fs-6">Farm Size (hectares)</label>
@@ -971,7 +962,7 @@
                 const farmLocation = document.getElementById('farmLocation').value;
 
                 if (!farmLocation) {
-                    showErrorAlert('Missing Information', 'Please select your farm location.');
+                    showErrorAlert('Missing Information', 'Please select your farm location down to the barangay level.');
                     return;
                 }
 
@@ -986,7 +977,7 @@
                 document.getElementById('summaryFarm').textContent =
                     document.getElementById('farmName').value || 'Not specified';
                 document.getElementById('summaryLocation').textContent =
-                    document.getElementById('farmLocation').options[document.getElementById('farmLocation').selectedIndex].text;
+                    document.getElementById('farmLocation').value || 'Not specified';
                 document.getElementById('summarySize').textContent =
                     document.getElementById('farmSize').value ? `${document.getElementById('farmSize').value} hectares` : 'Not specified';
                 document.getElementById('summaryCrops').textContent =
@@ -1094,6 +1085,131 @@
                     backdrop: 'rgba(255, 255, 255, 0.4)'
                 });
             }
+        });
+
+        // PSGC 4-level location cascade for registration form
+        const _regLocCache = {};
+
+        async function regPsgcGet(path) {
+            if (_regLocCache[path]) return _regLocCache[path];
+            try {
+                const res = await fetch('https://psgc.gitlab.io/api' + path);
+                const data = await res.json();
+                _regLocCache[path] = Array.isArray(data) ? data.sort((a, b) => a.name.localeCompare(b.name)) : data;
+                return _regLocCache[path];
+            } catch (e) { return []; }
+        }
+
+        function regFillSelect(id, items, placeholder) {
+            const s = document.getElementById(id);
+            s.innerHTML = `<option value="">${placeholder}</option>` +
+                items.map(i => `<option value="${i.code}">${i.name}</option>`).join('');
+            s.disabled = false;
+        }
+
+        function regClearSelect(id, placeholder) {
+            const s = document.getElementById(id);
+            s.innerHTML = `<option value="">${placeholder}</option>`;
+            s.disabled = true;
+            delete s.dataset.direct;
+        }
+
+        function getRegSelName(id) {
+            const s = document.getElementById(id);
+            return s && s.value ? s.options[s.selectedIndex].text : '';
+        }
+
+        function updateRegLocationValue() {
+            const region = getRegSelName('regRegion');
+            const province = getRegSelName('regProvince');
+            const municipality = getRegSelName('regMunicipality');
+            const barangay = getRegSelName('regBarangay');
+            const isDirect = document.getElementById('regProvince').dataset.direct === 'true';
+
+            let parts = [];
+            if (region) parts.push(region);
+            if (province) parts.push(province);
+            if (!isDirect && municipality) parts.push(municipality);
+            if (barangay) parts.push(barangay);
+
+            const value = parts.length >= 4 || (isDirect && parts.length >= 3) ? parts.join(' > ') : '';
+            document.getElementById('farmLocation').value = value;
+            document.getElementById('regLocationDisplay').textContent = value || '';
+        }
+
+        async function regOnRegionChange() {
+            const code = document.getElementById('regRegion').value;
+            regClearSelect('regProvince', '— Select Province —');
+            regClearSelect('regMunicipality', '— Select Municipality / City —');
+            regClearSelect('regBarangay', '— Select Barangay —');
+            updateRegLocationValue();
+            if (!code) return;
+
+            document.getElementById('regProvince').disabled = true;
+            const provinces = await regPsgcGet(`/regions/${code}/provinces.json`);
+            if (provinces.length > 0) {
+                regFillSelect('regProvince', provinces, '— Select Province —');
+            } else {
+                const [cities, munis] = await Promise.all([
+                    regPsgcGet(`/regions/${code}/cities.json`),
+                    regPsgcGet(`/regions/${code}/municipalities.json`)
+                ]);
+                const combined = [...cities, ...munis].sort((a, b) => a.name.localeCompare(b.name));
+                regFillSelect('regProvince', combined, '— Select City / Municipality —');
+                document.getElementById('regProvince').dataset.direct = 'true';
+                document.getElementById('regMunicipality').innerHTML = '<option value="">— N/A —</option>';
+            }
+        }
+
+        async function regOnProvinceChange() {
+            const pSel = document.getElementById('regProvince');
+            const code = pSel.value;
+            regClearSelect('regMunicipality', '— Select Municipality / City —');
+            regClearSelect('regBarangay', '— Select Barangay —');
+            updateRegLocationValue();
+            if (!code) return;
+
+            if (pSel.dataset.direct === 'true') {
+                document.getElementById('regBarangay').disabled = true;
+                const [b1, b2] = await Promise.all([
+                    regPsgcGet(`/cities/${code}/barangays.json`),
+                    regPsgcGet(`/municipalities/${code}/barangays.json`)
+                ]);
+                regFillSelect('regBarangay', b1.length ? b1 : b2, '— Select Barangay —');
+                return;
+            }
+
+            document.getElementById('regMunicipality').disabled = true;
+            const [cities, munis] = await Promise.all([
+                regPsgcGet(`/provinces/${code}/cities.json`),
+                regPsgcGet(`/provinces/${code}/municipalities.json`)
+            ]);
+            const combined = [...cities, ...munis].sort((a, b) => a.name.localeCompare(b.name));
+            regFillSelect('regMunicipality', combined, '— Select Municipality / City —');
+        }
+
+        async function regOnMunicipalityChange() {
+            const code = document.getElementById('regMunicipality').value;
+            regClearSelect('regBarangay', '— Select Barangay —');
+            updateRegLocationValue();
+            if (!code) return;
+
+            document.getElementById('regBarangay').disabled = true;
+            const [b1, b2] = await Promise.all([
+                regPsgcGet(`/cities/${code}/barangays.json`),
+                regPsgcGet(`/municipalities/${code}/barangays.json`)
+            ]);
+            regFillSelect('regBarangay', b1.length ? b1 : b2, '— Select Barangay —');
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const regions = await regPsgcGet('/regions.json');
+            regFillSelect('regRegion', regions, '— Select Region —');
+
+            document.getElementById('regRegion').addEventListener('change', regOnRegionChange);
+            document.getElementById('regProvince').addEventListener('change', regOnProvinceChange);
+            document.getElementById('regMunicipality').addEventListener('change', regOnMunicipalityChange);
+            document.getElementById('regBarangay').addEventListener('change', updateRegLocationValue);
         });
     </script>
 
