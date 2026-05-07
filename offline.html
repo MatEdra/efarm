@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Smart Farming Philippines</title>
+    <style>
+        :root { --green: #2e7d32; --light: #f1f8e9; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+        h1 {
+            color: var(--green);
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+        }
+        p {
+            color: #555;
+            font-size: 1rem;
+            max-width: 340px;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .btn {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:active { opacity: 0.85; }
+        .tip {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="icon">🌱</div>
+    <h1>You're offline</h1>
+    <p>eFarm needs an internet connection to load your farm data and dashboard. Please check your connection and try again.</p>
+    <button class="btn" onclick="window.location.reload()">Try Again</button>
+    <p class="tip">Your data is safe — everything will sync when you reconnect.</p>
+</body>
+</html>

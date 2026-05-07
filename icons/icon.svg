@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#2e7d32"/>
+  <!-- Stem -->
+  <line x1="256" y1="370" x2="256" y2="210" stroke="white" stroke-width="18" stroke-linecap="round"/>
+  <!-- Root left -->
+  <path d="M256 370 Q228 395 215 410" stroke="white" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Root right -->
+  <path d="M256 370 Q284 395 297 410" stroke="white" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Left leaf -->
+  <path d="M256 280 Q190 240 178 170 Q252 195 256 280" fill="white"/>
+  <!-- Right leaf -->
+  <path d="M256 250 Q330 210 345 138 Q265 168 256 250" fill="white"/>
+</svg>

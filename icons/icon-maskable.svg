@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full bleed background for maskable -->
+  <rect width="512" height="512" fill="#2e7d32"/>
+  <!-- Icon scaled to 80% safe zone (centered in 410x410 area, offset by 51) -->
+  <!-- Stem -->
+  <line x1="256" y1="350" x2="256" y2="225" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  <!-- Root left -->
+  <path d="M256 350 Q235 370 224 382" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+  <!-- Root right -->
+  <path d="M256 350 Q277 370 288 382" stroke="white" stroke-width="13" fill="none" stroke-linecap="round"/>
+  <!-- Left leaf -->
+  <path d="M256 290 Q202 258 192 196 Q256 218 256 290" fill="white"/>
+  <!-- Right leaf -->
+  <path d="M256 265 Q318 233 331 170 Q262 196 256 265" fill="white"/>
+</svg>
